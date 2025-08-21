@@ -27,9 +27,21 @@ def analyze_paper(uploaded_file):
     """Main function to orchestrate the analysis of the uploaded paper."""
     # 1. Extract text from PDF
     text = ""
-    with pdfplumber.open(uploaded_file) as pdf:
-        for page in pdf.pages:
-            text += page.extract_text() + "\n"
+    try:
+        with pdfplumber.open(uploaded_file) as pdf:
+            for page in pdf.pages:
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
+        
+        # Debug: Check if text was extracted
+        if len(text.strip()) == 0:
+            st.error("No text could be extracted from the PDF. The file might be image-based or corrupted.")
+            return None
+            
+    except Exception as e:
+        st.error(f"Error processing PDF: {str(e)}")
+        return None
 
     # 2. Instantiate all analyzers
     bias_analyzer = AdvancedBiasAnalyzer()
@@ -75,8 +87,12 @@ def main():
         # Process paper
         with st.spinner("Analyzing paper... This may take a moment."):
             results = analyze_paper(uploaded_file)
-        
-        st.header("Analysis Dashboard")
+            
+        if results:
+            st.header("Analysis Dashboard")
+        else:
+            st.error("Analysis failed. Please check the file and try again.")
+            return
         
         # Display results
         col1, col2 = st.columns(2)
@@ -101,7 +117,7 @@ def main():
         
         st.subheader("Full Paper Text")
         with st.expander("Click to view full text"):
-            st.text_area("", results['text'], height=300)
+            st.text_area("Paper Text", results['text'], height=300, label_visibility="collapsed")
 
     else:
         st.info("Upload a PDF file to begin analysis.")
