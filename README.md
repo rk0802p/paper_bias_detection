@@ -69,3 +69,27 @@ This project is an AI-powered system that analyzes academic papers for multiple 
     - Click the "Upload Academic Paper (PDF)" button in the sidebar.
     - Select a PDF file from your local machine.
     - The system will analyze the paper and display the bias and quality dashboard.
+
+## Research Paper Plagiarism & Similarity Analysis
+
+This app analyzes a PDF research paper and reports section-wise similarity (Title, Abstract, Methodology, Conclusions) against related papers discovered via the Semantic Scholar API. It uses TF-IDF cosine similarity to estimate overlap and categorizes similarity as:
+
+- 1–25%: Low similarity (mostly original ideas)
+- 25–50%: Moderate similarity
+- >50%: High similarity (heavily copied)
+
+For each section, the app shows the top matched papers with links so users can review overlaps.
+
+### How it works
+1. Extract text from PDF (pdfplumber)
+2. Heuristically extract sections
+3. Query Semantic Scholar for related papers
+4. Compute TF-IDF similarity and categorize
+
+### Run
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Notes: This is an approximate similarity signal to aid review; it is not a legal plagiarism determination.
