@@ -1,4 +1,0 @@
-sentence,bias_type,label
-"The study was funded by the Tobacco Research Institute.",Funding Bias,1
-"Our results confirm our initial hypothesis that the new drug is effective.",Cognitive Bias,1
-"The quick brown fox jumps over the lazy dog.",No Bias,0

@@ -1,95 +1,93 @@
-# AI-Powered Academic Paper Bias Detection & Quality Assessment System
 
-This project is an AI-powered system that analyzes academic papers for multiple types of bias while providing quality scores and improvement suggestions. The system combines natural language processing with rule-based analysis to provide a comprehensive assessment of academic work.
+
+## Project Overview
+
+Research Paper Plagiarism & Similarity Analysis is a web tool that reads an academic paper (PDF), extracts the main sections — Title, Abstract, Methodology, and Conclusions — and evaluates how similar each section is to related, previously published work. Results are shown as section‑wise similarity percentages with categorized levels and direct links to the closest matching sources.
+
+### What it does
+- Extracts text from uploaded PDFs (with robust fallbacks for tricky layouts)
+- Splits content into four sections: Title, Abstract, Methodology, Conclusions
+- Finds potentially similar papers using public scholarly APIs (Semantic Scholar and OpenAlex)
+- Computes TF‑IDF cosine similarity to estimate overlap
+- Classifies similarity levels:
+  - 1–25%: Low similarity (mostly original ideas)
+  - 25–50%: Moderate similarity
+  - >50%: High similarity (heavily copied)
+- Displays top matching sources with links for each section
+
+### How it works (pipeline)
+1) PDF ingestion: `pdfplumber` extracts text; if spacing is broken, the app reconstructs text from word boxes.
+2) Sectioning: simple, robust regex heuristics isolate Title/Abstract/Methodology/Conclusions.
+3) Retrieval: builds multiple concise queries per section and calls Semantic Scholar and OpenAlex; results are de‑duplicated.
+4) Scoring: TF‑IDF vectorization and cosine similarity produce a percent score per match; the best score per section drives the displayed category.
+5) Reporting: overall similarity is a weighted average favoring Abstract and Methodology; the UI renders per‑section tables with match percentage, title, and link.
+
+### Tech stack
+- Backend: Python, FastAPI, pdfplumber, scikit‑learn, requests
+- Frontend: React (Vite), Axios
 
 ---
 
-## Features
-
-- **Multi-Type Bias Detection**: Identifies linguistic patterns related to confirmation bias, selection bias, and more.
-- **Statistical Sanity Checks**: Scans for p-values and flags potential p-hacking.
-- **Methodology Validation**: Checks for keywords related to robust experimental design (e.g., control groups, blinding).
-- **RipetaScore-Inspired Quality Metrics**: Scores papers on transparency and reproducibility by checking for data and code availability statements.
-- **Unified Scoring System**: Combines multiple metrics into a single, easy-to-understand quality score.
-- **Interactive Web Interface**: An easy-to-use Streamlit application for uploading and analyzing papers.
-
----
-
-## Project Structure
-
+## Repository Layout
 ```
-/paper-bias-detection
-|-- app.py                    # Main Streamlit web application
-|-- requirements.txt          # Project dependencies
-|-- Dockerfile                # For containerized deployment
-|-- /src                      # Backend source code
-|   |-- bias_detector_model.py  # Deep learning model (DistilBERT)
-|   |-- traditional_models.py   # TF-IDF and rule-based models
-|   |-- advanced_bias_analyzer.py # Advanced pattern and statistical analysis
-|   |-- citation_analyzer.py    # Citation network analysis
-|   |-- quality_assessor.py     # Quality scoring engine
-|   |-- ...
-|-- /data
-|   |-- /annotated            # Sample annotated data
-|-- /docs
-|   |-- annotation_guidelines.md # Guidelines for bias annotation
-|-- /tests
-|   |-- test_quality_assessor.py # Sample unit tests
+backend/
+  api.py                 # FastAPI server, exposes POST /analyze
+  requirements.txt       # Backend dependencies
+  src/
+    plagiarism_checker.py  # Section extraction, retrieval, similarity, reporting
+web/
+  index.html            # Paper texture theme
+  src/ui/App.tsx        # React UI
+  vite.config.ts        # Dev server proxy to backend
 ```
 
 ---
 
-## How to Run
+## Requirements
 
-1.  **Set up the Environment**:
-    - Make sure you have Python 3.8+ installed.
-    - Create and activate a virtual environment:
-      ```bash
-      python -m venv venv
-      # On Windows:
-      venv\Scripts\activate
-      # On macOS/Linux:
-      source venv/bin/activate
-      ```
+### Backend
+- Python 3.10+
+- Packages (installed via `backend/requirements.txt`):
+  - fastapi, uvicorn, pdfplumber, numpy, scikit‑learn, requests, scipy
 
-2.  **Install Dependencies**:
-    - Install all required packages from `requirements.txt`:
-      ```bash
-      pip install -r requirements.txt
-      ```
+### Frontend
+- Node.js 18+ and npm (or pnpm/yarn)
 
-3.  **Run the Application**:
-    - Launch the Streamlit app:
-      ```bash
-      streamlit run app.py
-      ```
-    - Your web browser should open with the application running.
+---
 
-4.  **Using the App**:
-    - Click the "Upload Academic Paper (PDF)" button in the sidebar.
-    - Select a PDF file from your local machine.
-    - The system will analyze the paper and display the bias and quality dashboard.
+## Setup & Run
 
-## Research Paper Plagiarism & Similarity Analysis
+1) Clone and open this repository.
 
-This app analyzes a PDF research paper and reports section-wise similarity (Title, Abstract, Methodology, Conclusions) against related papers discovered via the Semantic Scholar API. It uses TF-IDF cosine similarity to estimate overlap and categorizes similarity as:
-
-- 1–25%: Low similarity (mostly original ideas)
-- 25–50%: Moderate similarity
-- >50%: High similarity (heavily copied)
-
-For each section, the app shows the top matched papers with links so users can review overlaps.
-
-### How it works
-1. Extract text from PDF (pdfplumber)
-2. Heuristically extract sections
-3. Query Semantic Scholar for related papers
-4. Compute TF-IDF similarity and categorize
-
-### Run
+2) Start the backend API
 ```bash
+cd backend
+python -m venv .venv
+# Windows
+.venv\Scripts\activate
+# macOS/Linux
+source .venv/bin/activate
+
 pip install -r requirements.txt
-streamlit run app.py
+uvicorn api:app --reload --port 8000
+```
+The API will be available at `http://localhost:8000`.
+
+3) Start the frontend
+```bash
+cd web
+npm install
+npm run dev
+# open http://localhost:5173
+```
+The frontend proxies API calls to `http://localhost:8000` (configured in `vite.config.ts`). To override, create `web/.env`:
+```
+VITE_API_BASE=http://localhost:8000
 ```
 
-Notes: This is an approximate similarity signal to aid review; it is not a legal plagiarism determination.
+---
+
+## Notes & Limitations
+- Similarity is an approximate signal intended to aid manual review; it is not a legal plagiarism determination.
+- Retrieval quality depends on the public APIs; network availability may affect results.
+- For image‑only PDFs, OCR is not currently enabled; add OCR if needed.

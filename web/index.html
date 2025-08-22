@@ -1,0 +1,28 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paper Similarity</title>
+    <style>
+      :root{
+        --bg: #f1eee7; /* parchment */
+        --panel: #e5e1d5;
+        --ink: #2b2119; /* dark brown */
+        --accent: #a64b2a; /* burgundy-orange */
+      }
+      html,body,#root{height:100%;}
+      body{
+        margin:0; background: var(--bg);
+        color: var(--ink);
+        font-family: ui-serif, Georgia, "Times New Roman", serif;
+        background-image: radial-gradient(#e8e4da 1px, transparent 1px);
+        background-size: 6px 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
