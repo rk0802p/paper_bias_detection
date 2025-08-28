@@ -10,31 +10,57 @@ const panel: React.CSSProperties = {
 }
 
 function Section({name, data}: {name: string, data: any}){
+  const [expanded, setExpanded] = useState(false)
+  
   return (
     <div style={{...panel, marginBottom: 16}}>
-      <h3 style={{marginTop:0}}>{name} — {data?.best_similarity_percent?.toFixed(2)}%</h3>
-      <div style={{fontStyle:'italic', color:'#6b5b53'}}>{data?.category}</div>
-      {data?.matches?.length ? (
-        <table style={{width:'100%', marginTop:12}}>
-          <thead>
-            <tr>
-              <th align="left">% Match</th>
-              <th align="left">Title</th>
-              <th align="left">Link</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.matches.map((m: any, i: number) => (
-              <tr key={i}>
-                <td>{m.percent.toFixed(2)}%</td>
-                <td>{m.title}</td>
-                <td><a href={m.url} style={{color:'var(--accent)'}} target="_blank">Open</a></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <div style={{marginTop:8, color:'#6b5b53'}}>No close matches found.</div>
+      <div 
+        style={{
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          cursor: 'pointer',
+          padding: '8px 0'
+        }}
+        onClick={() => setExpanded(!expanded)}
+      >
+        <h3 style={{margin: 0}}>{name} — {data?.best_similarity_percent?.toFixed(2)}%</h3>
+        <div style={{
+          fontSize: '20px',
+          color: 'var(--accent)',
+          transition: 'transform 0.2s',
+          transform: expanded ? 'rotate(180deg)' : 'rotate(0deg)'
+        }}>
+          ▼
+        </div>
+      </div>
+      
+      {expanded && (
+        <div style={{marginTop: 16, borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: 16}}>
+          <div style={{fontStyle:'italic', color:'#6b5b53', marginBottom: 12}}>{data?.category}</div>
+          {data?.matches?.length ? (
+            <table style={{width:'100%'}}>
+              <thead>
+                <tr>
+                  <th align="left">% Match</th>
+                  <th align="left">Title</th>
+                  <th align="left">Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.matches.map((m: any, i: number) => (
+                  <tr key={i}>
+                    <td>{m.percent.toFixed(2)}%</td>
+                    <td>{m.title}</td>
+                    <td><a href={m.url} style={{color:'var(--accent)'}} target="_blank">Open</a></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div style={{color:'#6b5b53'}}>No close matches found.</div>
+          )}
+        </div>
       )}
     </div>
   )

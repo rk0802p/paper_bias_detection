@@ -85,7 +85,6 @@ The frontend proxies API calls to `http://localhost:8000` (configured in `vite.c
 VITE_API_BASE=http://localhost:8000
 ```
 
----
 
 ## Notes & Limitations
 - Similarity is an approximate signal intended to aid manual review; it is not a legal plagiarism determination.
