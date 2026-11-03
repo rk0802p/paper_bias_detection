@@ -922,6 +922,14 @@ export default function App() {
   const [report, setReport] = useState<any>(null)
   const [loadingMessage, setLoadingMessage] = useState('')
 
+  // Pre-warm backend when page loads to prevent cold-start timeouts
+  useEffect(() => {
+    const apiBase = import.meta.env.VITE_API_BASE || 'https://paper-bias-detection.onrender.com'
+    axios.get(`${apiBase}/health`, { timeout: 15000 }).catch(() => {
+      // Ignore background wake-up errors
+    })
+  }, [])
+
   const onAnalyze = async () => {
     if (!file) return
     
@@ -939,14 +947,18 @@ export default function App() {
       const resp = await axios.post('/analyze', form, {
         baseURL: import.meta.env.VITE_API_BASE || 'https://paper-bias-detection.onrender.com',
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 120000 // 2 minute timeout
+        timeout: 180000 // 3 minute timeout to accommodate cold starts & deep searches
       })
       
       setLoadingMessage('Processing results...')
       setReport(resp.data)
       
     } catch (e: any) {
-      setError(e?.response?.data?.error || e.message || 'Analysis failed')
+      if (e.code === 'ECONNABORTED' || e.message?.includes('timeout')) {
+        setError('Analysis timed out. The backend server may have been waking up from idle mode. Please try clicking Analyze Paper again.')
+      } else {
+        setError(e?.response?.data?.error || e.message || 'Analysis failed')
+      }
     } finally {
       setLoading(false)
       setLoadingMessage('')

@@ -337,13 +337,16 @@ def extract_sections(text: str) -> dict:
             executor.submit(_extract_sections_spacy, text): "spacy"
         }
         
-        for future in as_completed(futures, timeout=5):
-            method = futures[future]
-            try:
-                results[method] = future.result()
-            except Exception as e:
-                logger.warning(f"Section extraction ({method}) failed: {e}")
-                results[method] = {"Title": "", "Abstract": "", "Methodology": "", "Conclusions": ""}
+        try:
+            for future in as_completed(futures, timeout=8):
+                method = futures[future]
+                try:
+                    results[method] = future.result()
+                except Exception as e:
+                    logger.warning(f"Section extraction ({method}) failed: {e}")
+                    results[method] = {"Title": "", "Abstract": "", "Methodology": "", "Conclusions": ""}
+        except Exception as e:
+            logger.warning(f"Section extraction timed out or failed: {e}")
     
     regex_result = results.get("regex", {})
     spacy_result = results.get("spacy", {})
@@ -869,13 +872,16 @@ def search_related_papers(section_text: str, max_results: int = 10) -> List[Dict
             for name, func in search_functions
         }
         
-        for future in as_completed(future_to_source, timeout=15):
-            source = future_to_source[future]
-            try:
-                results = future.result()
-                all_results.extend(results)
-            except Exception as e:
-                logger.warning(f"{source} search failed: {e}")
+        try:
+            for future in as_completed(future_to_source, timeout=15):
+                source = future_to_source[future]
+                try:
+                    results = future.result()
+                    all_results.extend(results)
+                except Exception as e:
+                    logger.warning(f"{source} search failed: {e}")
+        except Exception as e:
+            logger.warning(f"Database search timed out or encountered error: {e}")
     
     # Deduplicate results by title
     seen_titles = set()
@@ -941,23 +947,41 @@ def analyze_section(section_text: str, top_k: int = 5):
 
 
 
-def analyze_plagiarism(full_text: str) -> Dict[str, object]:
-    sections = extract_sections(full_text)
+def analyze_plagiarism(full_text: str, sections: Optional[Dict[str, str]] = None) -> Dict[str, object]:
+    if sections is None:
+        sections = extract_sections(full_text)
 
     report = {
         "sections": {},
         "overall_percent": 0.0
     }
 
-    # Weights: Title, Abstract, Methodology, Conclusions
+    section_names = ["Title", "Abstract", "Methodology", "Conclusions"]
     weights = np.array([0.05, 0.45, 0.45, 0.05])
+
+    # Run similarity analysis on all 4 sections in parallel
+    section_results = {}
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        future_to_name = {
+            executor.submit(analyze_section, sections.get(name, "")): name
+            for name in section_names
+        }
+        for future in as_completed(future_to_name):
+            name = future_to_name[future]
+            try:
+                section_results[name] = future.result()
+            except Exception as e:
+                logger.warning(f"Analysis failed for section {name}: {e}")
+                section_results[name] = {
+                    "best_similarity_percent": 0.0,
+                    "category": "Low similarity",
+                    "matches": []
+                }
+
     values = []
-
-    for name in ["Title", "Abstract", "Methodology", "Conclusions"]:
+    for name in section_names:
         section_text = sections.get(name, "")
-
-        # Run similarity analysis (NO metadata)
-        result = analyze_section(section_text)
+        result = section_results.get(name, {})
 
         # ✅ INCLUDE SECTION TEXT (critical fix)
         report["sections"][name] = {

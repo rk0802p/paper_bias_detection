@@ -4,6 +4,9 @@ from pdf2image import convert_from_path
 import pytesseract
 import os
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 MIN_TEXT_LENGTH = 500  # heuristic

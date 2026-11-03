@@ -78,11 +78,13 @@ async def analyze(file: UploadFile = File(...)):
                 content={"error": "No text extracted from PDF"}
             )
 
-        # 3️⃣ Plagiarism analysis
-        plagiarism_report = analyze_plagiarism(full_text)
-
-        # 4️⃣ Bias analysis (Gemini)
+        # 3️⃣ Section extraction (run ONCE for both plagiarism & bias analysis)
         sections = extract_sections(full_text)
+
+        # 4️⃣ Plagiarism analysis (reuse extracted sections)
+        plagiarism_report = analyze_plagiarism(full_text, sections=sections)
+
+        # 5️⃣ Bias analysis (Gemini)
         bias_result = bias_analyzer.analyze_paper_sections(sections)
         bias_dict = result_to_dict(bias_result)
 
